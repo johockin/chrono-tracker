@@ -2,6 +2,7 @@
 
 # ChronoTracker Self-Extracting Installer
 # Downloads and installs ChronoTracker in the current project directory
+# GitHub sync fix: 2025-07-28
 
 set -e
 
