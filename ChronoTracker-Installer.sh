@@ -51,13 +51,27 @@ fi
 if [ -d "$PROJECT_ROOT/ChronoTracker" ]; then
     echo "⚠️  ChronoTracker folder already exists"
     echo ""
-    echo "🗑️  Removing old installation for clean install..."
+    echo "📸 Backing up existing screenshots..."
+    
+    # Create backup directory
+    BACKUP_DIR="$PROJECT_ROOT/ChronoTracker_backup_$(date +%Y%m%d_%H%M%S)"
+    mkdir -p "$BACKUP_DIR"
+    
+    # Backup screenshots and config
+    if ls "$PROJECT_ROOT/ChronoTracker"/*.png > /dev/null 2>&1; then
+        cp "$PROJECT_ROOT/ChronoTracker"/*.png "$BACKUP_DIR/" 2>/dev/null || true
+        SCREENSHOT_COUNT=$(ls "$PROJECT_ROOT/ChronoTracker"/*.png 2>/dev/null | wc -l)
+        echo "  📁 Backed up $SCREENSHOT_COUNT screenshots to $BACKUP_DIR"
+    fi
+    
+    if [ -f "$PROJECT_ROOT/ChronoTracker/config.json" ]; then
+        cp "$PROJECT_ROOT/ChronoTracker/config.json" "$BACKUP_DIR/" 2>/dev/null || true
+        echo "  ⚙️  Backed up config.json"
+    fi
+    
+    echo "🗑️  Removing old installation..."
     rm -rf "$PROJECT_ROOT/ChronoTracker"
-    echo "✅ Old installation removed"
-    echo ""
-    echo "💡 Tip: For updates, download and run the installer directly:"
-    echo "   curl -O https://raw.githubusercontent.com/johockin/chrono-tracker/main/ChronoTracker-Installer.sh"
-    echo "   chmod +x ChronoTracker-Installer.sh && ./ChronoTracker-Installer.sh"
+    echo "✅ Old installation removed (screenshots safely backed up)"
     echo ""
 fi
 
@@ -89,6 +103,28 @@ echo "🔧 Setting up Git hooks..."
 # Run the install script
 if "$PROJECT_ROOT/ChronoTracker/Scripts/install.sh"; then
     echo ""
+    
+    # Restore backed up screenshots if they exist
+    if [ -n "$BACKUP_DIR" ] && [ -d "$BACKUP_DIR" ]; then
+        echo "📸 Restoring your screenshots..."
+        
+        if ls "$BACKUP_DIR"/*.png > /dev/null 2>&1; then
+            cp "$BACKUP_DIR"/*.png "$PROJECT_ROOT/ChronoTracker/" 2>/dev/null || true
+            RESTORED_COUNT=$(ls "$BACKUP_DIR"/*.png 2>/dev/null | wc -l)
+            echo "  ✅ Restored $RESTORED_COUNT screenshots"
+        fi
+        
+        if [ -f "$BACKUP_DIR/config.json" ]; then
+            cp "$BACKUP_DIR/config.json" "$PROJECT_ROOT/ChronoTracker/" 2>/dev/null || true
+            echo "  ✅ Restored config.json"
+        fi
+        
+        # Clean up backup directory
+        rm -rf "$BACKUP_DIR"
+        echo "🧹 Cleaned up temporary backup"
+        echo ""
+    fi
+    
     echo "✅ ChronoTracker installed successfully!"
     echo ""
     echo "📖 What's next:"
