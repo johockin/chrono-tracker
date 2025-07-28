@@ -51,38 +51,14 @@ fi
 if [ -d "$PROJECT_ROOT/ChronoTracker" ]; then
     echo "⚠️  ChronoTracker folder already exists"
     echo ""
-    echo "What would you like to do?"
-    echo "  1) Delete and clean install (recommended)"
-    echo "  2) Update existing installation"
-    echo "  3) Cancel"
+    echo "🗑️  Removing old installation for clean install..."
+    rm -rf "$PROJECT_ROOT/ChronoTracker"
+    echo "✅ Old installation removed"
     echo ""
-    printf "Choose (1/2/3): "
-    read -r choice
-    
-    case $choice in
-        1)
-            echo "🗑️  Removing existing ChronoTracker folder..."
-            rm -rf "$PROJECT_ROOT/ChronoTracker"
-            echo "✅ Old installation removed"
-            echo ""
-            ;;
-        2)
-            echo "🔄 Updating existing installation..."
-            if [ -d "$PROJECT_ROOT/ChronoTracker/.git" ]; then
-                cd "$PROJECT_ROOT/ChronoTracker" && git pull
-                echo "✅ Update complete!"
-                exit 0
-            else
-                echo "❌ Cannot update - existing installation is not a git repository"
-                echo "   Choose option 1 for clean install instead"
-                exit 1
-            fi
-            ;;
-        3|*)
-            echo "❌ Installation cancelled"
-            exit 1
-            ;;
-    esac
+    echo "💡 Tip: For updates, download and run the installer directly:"
+    echo "   curl -O https://raw.githubusercontent.com/johockin/chrono-tracker/main/ChronoTracker-Installer.sh"
+    echo "   chmod +x ChronoTracker-Installer.sh && ./ChronoTracker-Installer.sh"
+    echo ""
 fi
 
 echo "📥 Downloading ChronoTracker..."
