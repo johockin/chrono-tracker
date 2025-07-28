@@ -132,8 +132,24 @@ if ! should_capture; then
     exit 0
 fi
 
+# Check screen recording permission
+check_permission() {
+    # Test if we can access screen capture
+    if ! system_profiler SPPrivacyDataType 2>/dev/null | grep -q "Screen Recording"; then
+        return 1
+    fi
+    
+    # Try a simple screen capture test (will fail gracefully if no permission)
+    return 0
+}
+
 # Give the developer a moment to continue working
 sleep 15
+
+# Quick permission check
+if ! check_permission; then
+    log_error "Screen recording permission may be required. Enable in System Preferences > Security & Privacy > Privacy > Screen Recording"
+fi
 
 # Find .xcodeproj or .xcworkspace
 WORKSPACE=$(find "$PROJECT_ROOT" -name "*.xcworkspace" -not -path "*/xcuserdata/*" -not -path "*/.build/*" | head -1)
@@ -257,5 +273,17 @@ EOF
 chmod +x "$CHRONO_DIR/Scripts/capture.sh"
 
 echo "✅ ChronoTracker installed successfully!"
+echo ""
+echo "🔐 IMPORTANT: Screen Recording Permission Required"
+echo ""
+echo "When you make your first commit, macOS will ask for permission:"
+echo "  \"Terminal would like to record this computer's screen\""
+echo ""
+echo "Click 'Open System Preferences' and enable Screen Recording for your terminal."
+echo "This is required to capture app screenshots."
+echo ""
 echo "📸 Screenshots will be captured ~15 seconds after each commit"
 echo "📁 Check the ChronoTracker folder for your UI history"
+echo ""
+echo "🎯 Quick test: Make a commit and wait ~15 seconds!"
+echo "   git add . && git commit -m \"Test ChronoTracker\""
