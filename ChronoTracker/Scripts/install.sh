@@ -13,8 +13,17 @@ echo "🚀 Installing ChronoTracker..."
 
 # Git repository check handled by outer installer - assume it exists here
 
-GIT_DIR=$(git -C "$PROJECT_ROOT" rev-parse --git-dir)
-HOOKS_DIR="$GIT_DIR/hooks"
+# Get git directory with fallback
+GIT_DIR=$(git -C "$PROJECT_ROOT" rev-parse --git-dir 2>/dev/null || echo ".git")
+if [ ! -d "$PROJECT_ROOT/$GIT_DIR" ]; then
+    echo "⚠️  Warning: Git repository not found. Creating one..."
+    git -C "$PROJECT_ROOT" init
+    git -C "$PROJECT_ROOT" add .
+    git -C "$PROJECT_ROOT" commit -m "Initial commit - ChronoTracker installation" || true
+    GIT_DIR=".git"
+fi
+
+HOOKS_DIR="$PROJECT_ROOT/$GIT_DIR/hooks"
 
 # Create hooks directory if it doesn't exist
 mkdir -p "$HOOKS_DIR"
