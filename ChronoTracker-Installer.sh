@@ -17,9 +17,34 @@ echo ""
 
 # Check if we're in a git repository
 if ! git rev-parse --git-dir > /dev/null 2>&1; then
-    echo "❌ Error: Not in a Git repository. ChronoTracker requires Git."
-    echo "   Initialize a git repo first: git init"
-    exit 1
+    echo "❌ ChronoTracker requires a Git repository to work"
+    echo ""
+    echo "💡 Why? ChronoTracker captures screenshots on git commits."
+    echo "   You don't need GitHub/remote - local git repo is fine!"
+    echo ""
+    echo "🔧 Would you like me to initialize git for you? (y/n)"
+    read -r response
+    
+    if [[ "$response" =~ ^[Yy]$ ]]; then
+        echo "📦 Initializing git repository..."
+        git init
+        
+        echo "📁 Adding project files..."
+        git add .
+        
+        echo "📝 Creating initial commit..."
+        git commit -m "Initial commit - before ChronoTracker installation"
+        
+        echo "✅ Git repository initialized!"
+        echo ""
+    else
+        echo ""
+        echo "🔧 Run these commands manually, then try the installer again:"
+        echo "   git init"
+        echo "   git add ."
+        echo "   git commit -m \"Initial commit\""
+        exit 1
+    fi
 fi
 
 # Check if ChronoTracker already exists
