@@ -79,13 +79,13 @@ class ScreenshotCapture {
                 return
             }
             
-            // Capture each window
+            // Capture each window with retry logic
             let dateFormatter = DateFormatter()
             dateFormatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
             let timestamp = dateFormatter.string(from: Date())
             
             for (index, window) in windows.enumerated() {
-                await captureWindow(window, timestamp: timestamp, index: index)
+                await captureWindowWithRetry(window, timestamp: timestamp, index: index)
             }
             
             // Terminate the app
@@ -103,7 +103,8 @@ class ScreenshotCapture {
             return content.windows.filter { window in
                 window.owningApplication?.processID == pid && 
                 window.isOnScreen &&
-                window.frame.width > 100 && window.frame.height > 100  // Skip tiny windows
+                window.frame.width > 100 && window.frame.height > 100 &&  // Skip tiny windows
+                isAppWindow(window)  // Smart filtering
             }
         } catch {
             logError("Failed to get windows: \(error)")
@@ -111,8 +112,79 @@ class ScreenshotCapture {
         }
     }
     
+    // Smart window filtering to exclude system/debug windows
+    func isAppWindow(_ window: SCWindow) -> Bool {
+        guard let title = window.title, !title.isEmpty else { 
+            // Skip windows without titles (usually system windows)
+            return false 
+        }
+        
+        // Skip Xcode debugger, system dialogs, and development tools
+        let systemPrefixes = [
+            "Debugger", "Console", "Memory Graph", "Simulator", "Preview",
+            "Interface Builder", "Storyboard", "SwiftUI Preview",
+            "Accessibility Inspector", "Instruments", "Activity Monitor",
+            "Terminal", "Xcode", "CoreSimulator", "iOS Simulator"
+        ]
+        
+        let systemSuffixes = [
+            "Debugger", "Console", "Inspector", "Simulator"
+        ]
+        
+        // Check prefixes
+        for prefix in systemPrefixes {
+            if title.hasPrefix(prefix) {
+                return false
+            }
+        }
+        
+        // Check suffixes
+        for suffix in systemSuffixes {
+            if title.hasSuffix(suffix) {
+                return false
+            }
+        }
+        
+        // Skip windows that are clearly system dialogs
+        let systemKeywords = ["Alert", "Dialog", "Popup", "Menu"]
+        for keyword in systemKeywords {
+            if title.contains(keyword) && title.count < 50 {  // Short titles are usually system dialogs
+                return false
+            }
+        }
+        
+        // Skip windows that are too small to be main app windows
+        if window.frame.width < 200 || window.frame.height < 150 {
+            return false
+        }
+        
+        return true
+    }
+    
+    // Capture window with retry logic for reliability
     @available(macOS 12.3, *)
-    func captureWindow(_ window: SCWindow, timestamp: String, index: Int) async {
+    func captureWindowWithRetry(_ window: SCWindow, timestamp: String, index: Int, maxAttempts: Int = 3) async {
+        for attempt in 1...maxAttempts {
+            do {
+                await captureWindow(window, timestamp: timestamp, index: index)
+                return // Success, exit retry loop
+            } catch {
+                if attempt == maxAttempts {
+                    let windowTitle = window.title?.replacingOccurrences(of: "/", with: "-")
+                        .replacingOccurrences(of: ":", with: "-")
+                        .trimmingCharacters(in: .whitespacesAndNewlines) ?? "window"
+                    logError("Failed to capture '\(windowTitle)' after \(maxAttempts) attempts: \(error)")
+                } else {
+                    // Wait before retry (exponential backoff)
+                    let delay = TimeInterval(attempt) * 0.5 // 0.5s, 1s, 1.5s...
+                    try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                }
+            }
+        }
+    }
+    
+    @available(macOS 12.3, *)
+    func captureWindow(_ window: SCWindow, timestamp: String, index: Int) async throws {
         // Clean window title for filename
         let windowTitle = window.title?.replacingOccurrences(of: "/", with: "-")
             .replacingOccurrences(of: ":", with: "-")
@@ -151,7 +223,8 @@ class ScreenshotCapture {
             }
             
         } catch {
-            logError("Failed to capture window '\(windowTitle)': \(error)")
+            // Re-throw error for retry logic to handle
+            throw error
         }
     }
 }

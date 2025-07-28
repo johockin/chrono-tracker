@@ -151,28 +151,99 @@ else
     BUILD_TARGET="-project $PROJECT"
 fi
 
-# Get scheme name (simplified - in reality we'd parse or config this)
-SCHEME=$(xcodebuild -list $BUILD_TARGET 2>/dev/null | awk '/Schemes:/{getline; print $1}')
+# Get build info using JSON for robust parsing
+get_build_info() {
+    local json_output
+    if [ -n "$WORKSPACE" ]; then
+        json_output=$(xcodebuild -list -workspace "$WORKSPACE" -json 2>/dev/null)
+    else
+        json_output=$(xcodebuild -list -project "$PROJECT" -json 2>/dev/null)
+    fi
+    
+    # Extract first scheme using Python (available on all macOS)
+    echo "$json_output" | python3 -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+    if 'workspace' in data and 'schemes' in data['workspace']:
+        schemes = data['workspace']['schemes']
+    elif 'project' in data and 'schemes' in data['project']:
+        schemes = data['project']['schemes']
+    else:
+        sys.exit(1)
+    
+    if schemes:
+        print(schemes[0])
+    else:
+        sys.exit(1)
+except:
+    sys.exit(1)
+"
+}
+
+SCHEME=$(get_build_info)
 
 if [ -z "$SCHEME" ]; then
-    log_error "Could not determine Xcode scheme"
-    exit 1
+    log_error "Could not determine Xcode scheme using JSON parsing"
+    
+    # Fallback to legacy parsing
+    SCHEME=$(xcodebuild -list $BUILD_TARGET 2>/dev/null | awk '/Schemes:/{getline; print $1}')
+    
+    if [ -z "$SCHEME" ]; then
+        log_error "Could not determine Xcode scheme (fallback also failed)"
+        exit 1
+    fi
 fi
 
-# Build the app
+# Try to build the app
 BUILD_DIR="$CHRONO_DIR/.build"
 xcodebuild $BUILD_TARGET -scheme "$SCHEME" -configuration Debug -derivedDataPath "$BUILD_DIR" build > /dev/null 2>&1
 
-if [ $? -ne 0 ]; then
-    log_error "Build failed"
-    exit 1
+APP_PATH=""
+
+if [ $? -eq 0 ]; then
+    # Build successful, find the built app
+    APP_PATH=$(find "$BUILD_DIR" -name "*.app" -type d | head -1)
+    
+    if [ -n "$APP_PATH" ]; then
+        echo "Built app successfully: $APP_PATH"
+    fi
 fi
 
-# Find the built app
-APP_PATH=$(find "$BUILD_DIR" -name "*.app" -type d | head -1)
+# Graceful fallback: if build failed or app not found, try existing app
+if [ -z "$APP_PATH" ]; then
+    log_error "Build failed or app not found, trying fallback options..."
+    
+    # Try to find existing app in /Applications
+    APP_NAME=$(basename "$SCHEME" .xcodeproj)
+    FALLBACK_PATHS=(
+        "/Applications/$APP_NAME.app"
+        "/Applications/$SCHEME.app"
+        "$HOME/Applications/$APP_NAME.app"
+        "$HOME/Applications/$SCHEME.app"
+    )
+    
+    for path in "${FALLBACK_PATHS[@]}"; do
+        if [ -d "$path" ]; then
+            APP_PATH="$path"
+            log_error "Using existing app: $APP_PATH"
+            break
+        fi
+    done
+    
+    # Last resort: try to find any .app in DerivedData
+    if [ -z "$APP_PATH" ]; then
+        DERIVED_DATA_PATH="$HOME/Library/Developer/Xcode/DerivedData"
+        APP_PATH=$(find "$DERIVED_DATA_PATH" -name "*$SCHEME*.app" -type d 2>/dev/null | head -1)
+        
+        if [ -n "$APP_PATH" ]; then
+            log_error "Using DerivedData app: $APP_PATH"
+        fi
+    fi
+fi
 
 if [ -z "$APP_PATH" ]; then
-    log_error "Could not find built app"
+    log_error "Could not find any usable app (build failed and no fallback found)"
     exit 1
 fi
 
