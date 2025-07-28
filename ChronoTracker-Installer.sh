@@ -15,7 +15,7 @@ echo "🚀 ChronoTracker Self-Extracting Installer"
 echo "   Installing to: $PROJECT_ROOT"
 echo ""
 
-# Check if we're in a git repository
+# Check if we're in a git repository FIRST (before any folder operations)
 if ! git rev-parse --git-dir > /dev/null 2>&1; then
     echo "❌ ChronoTracker requires a Git repository to work"
     echo ""

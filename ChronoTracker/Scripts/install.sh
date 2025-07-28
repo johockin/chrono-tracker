@@ -11,9 +11,10 @@ CHRONO_DIR="$PROJECT_ROOT/ChronoTracker"
 
 echo "🚀 Installing ChronoTracker..."
 
-# Check if we're in a git repository
+# Check if we're in a git repository (should be handled by outer installer)
 if ! git -C "$PROJECT_ROOT" rev-parse --git-dir > /dev/null 2>&1; then
     echo "❌ Error: Not in a Git repository. ChronoTracker requires Git."
+    echo "   Run: git init && git add . && git commit -m 'Initial commit'"
     exit 1
 fi
 
