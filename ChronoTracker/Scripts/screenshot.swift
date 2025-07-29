@@ -166,7 +166,7 @@ class ScreenshotCapture {
     func captureWindowWithRetry(_ window: SCWindow, timestamp: String, index: Int, maxAttempts: Int = 3) async {
         for attempt in 1...maxAttempts {
             do {
-                await captureWindow(window, timestamp: timestamp, index: index)
+                try await captureWindow(window, timestamp: timestamp, index: index)
                 return // Success, exit retry loop
             } catch {
                 if attempt == maxAttempts {
@@ -214,8 +214,9 @@ class ScreenshotCapture {
                 configuration: config
             )
             
-            // Convert to PNG and save
-            if let tiffData = image.tiffRepresentation,
+            // Convert CGImage to NSImage first, then to PNG
+            let nsImage = NSImage(cgImage: image, size: NSSize(width: image.width, height: image.height))
+            if let tiffData = nsImage.tiffRepresentation,
                let bitmap = NSBitmapImageRep(data: tiffData),
                let pngData = bitmap.representation(using: .png, properties: [:]) {
                 
@@ -231,7 +232,6 @@ class ScreenshotCapture {
 
 // Main execution
 @available(macOS 12.3, *)
-@main
 struct ChronoTrackerScreenshot {
     static func main() async {
         let args = CommandLine.arguments
@@ -252,9 +252,9 @@ struct ChronoTrackerScreenshot {
     }
 }
 
-// Fallback for older macOS versions
+// Execute main function
 if #available(macOS 12.3, *) {
-    // Modern implementation above
+    await ChronoTrackerScreenshot.main()
 } else {
     print("ChronoTracker requires macOS 12.3 or later")
     exit(1)
