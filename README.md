@@ -146,8 +146,28 @@ curl -sL https://raw.githubusercontent.com/johockin/chrono-tracker/main/ChronoTr
 - ⚠️ **Limited Testing** - May not work with all project configurations
 - ⚠️ **Active Development** - Features may change without notice
 - ⚠️ **Backup Your Work** - Always backup important projects before installing
+- ⚠️ **Brief Window Flash** - Apps must be briefly visible for screenshot capture (macOS limitation)
 
 **Use in production at your own risk.**
+
+## 📋 Known Technical Limitations
+
+### Window Visibility Requirement
+ChronoTracker faces a fundamental macOS constraint: ScreenCaptureKit can only capture windows that are "on-screen" (visible). This means:
+
+- **Brief Flash**: Your app windows will appear briefly (~0.5 seconds) during capture
+- **Not Truly Invisible**: While we minimize disruption with positioning and transparency, complete invisibility isn't possible
+- **Architectural Trade-off**: This is a limitation of the script-based approach, not a bug
+
+### Current Optimizations
+- ⚡ **Fast Capture**: 0.5-second window visibility (down from 15 seconds)
+- 👻 **Near Transparency**: Windows set to 10% opacity during capture
+- 📍 **Off-Screen Positioning**: Windows moved just outside screen bounds
+- 🔄 **Parallel Processing**: Multiple windows captured simultaneously
+
+### Future Solutions
+- 🍎 **Menu Bar App**: Long-term solution for truly invisible capture
+- 🔬 **Private APIs**: Exploring deeper macOS integration (may require signed app)
 
 ## 🤝 Contributing
 

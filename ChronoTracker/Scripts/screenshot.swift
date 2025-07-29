@@ -76,8 +76,8 @@ class ScreenshotCapture {
         do {
             let app = try await NSWorkspace.shared.openApplication(at: appURL, configuration: config)
             
-            // Give app time to fully launch and render
-            try await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds - reduced for faster capture
+            // Give app time to fully launch and render (reduced for minimal flash)
+            try await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds - optimized for speed
             
             // Move windows off-screen to minimize disruption
             await moveWindowsOffScreen(for: app.processIdentifier)
@@ -113,7 +113,7 @@ class ScreenshotCapture {
         }
     }
     
-    // Move windows off-screen to minimize user disruption
+    // Move windows off-screen and set transparency to minimize user disruption
     func moveWindowsOffScreen(for pid: pid_t) async {
         // Check if we have accessibility permissions
         guard AXIsProcessTrusted() else {
@@ -134,15 +134,25 @@ class ScreenshotCapture {
         
         let result = AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &windowList)
         if result == .success, let windows = windowList as? [AXUIElement] {
-            print("DEBUG: Moving \(windows.count) windows off-screen")
+            print("DEBUG: Moving \(windows.count) windows off-screen and setting transparency")
             for (index, window) in windows.enumerated() {
-                // Move window far off-screen (but still technically visible for ScreenCaptureKit)
-                var offScreenPosition = CGPoint(x: -10000, y: -10000)
+                // Move window just outside screen bounds (closer for faster repositioning)
+                let screenBounds = NSScreen.main?.frame ?? CGRect.zero
+                var offScreenPosition = CGPoint(x: screenBounds.maxX + 50, y: screenBounds.minY - 50)
                 
                 if let positionValue = AXValueCreate(.cgPoint, &offScreenPosition) {
                     let setResult = AXUIElementSetAttributeValue(window, kAXPositionAttribute as CFString, positionValue)
                     if setResult != .success {
                         print("DEBUG: Failed to move window \(index): \(setResult.rawValue)")
+                    }
+                }
+                
+                // Set window transparency to minimize visual impact
+                var alpha: Float = 0.1  // Nearly transparent
+                if let alphaValue = AXValueCreate(.cgFloat, &alpha) {
+                    let alphaResult = AXUIElementSetAttributeValue(window, "AXWindowAlpha" as CFString, alphaValue)
+                    if alphaResult != .success {
+                        print("DEBUG: Failed to set window \(index) transparency: \(alphaResult.rawValue)")
                     }
                 }
             }
