@@ -134,7 +134,7 @@ class ScreenshotCapture {
         
         let result = AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &windowList)
         if result == .success, let windows = windowList as? [AXUIElement] {
-            print("DEBUG: Moving \(windows.count) windows off-screen and setting transparency")
+            print("DEBUG: Moving \(windows.count) windows off-screen")
             for (index, window) in windows.enumerated() {
                 // Move window just outside screen bounds (closer for faster repositioning)
                 let screenBounds = NSScreen.main?.frame ?? CGRect.zero
@@ -147,14 +147,8 @@ class ScreenshotCapture {
                     }
                 }
                 
-                // Set window transparency to minimize visual impact
-                var alpha: Float = 0.1  // Nearly transparent
-                if let alphaValue = AXValueCreate(.cgFloat, &alpha) {
-                    let alphaResult = AXUIElementSetAttributeValue(window, "AXWindowAlpha" as CFString, alphaValue)
-                    if alphaResult != .success {
-                        print("DEBUG: Failed to set window \(index) transparency: \(alphaResult.rawValue)")
-                    }
-                }
+                // Note: Window transparency removed due to compilation issues
+                // and uncertain effectiveness for screenshot capture
             }
         } else {
             print("DEBUG: Failed to get window list: \(result.rawValue)")

@@ -69,6 +69,30 @@ Chrono Tracker is a lightweight, plug-and-play screenshot tracking library for m
     - Comprehensive README with pre-alpha warnings
     - Fixed path handling for directories with spaces
     - Added Xcode configuration check (prevents Command Line Tools issues)
+- **2025-07-29**: Major architectural breakthrough and optimization (v0.1.05):
+  - **CRITICAL DISCOVERY**: macOS ScreenCaptureKit fundamental limitation discovered
+    - Windows must be "on-screen" (visible) to be captured - no truly headless capture possible
+    - Script-based approach hits macOS security model constraints
+  - **"Accept the Flash" Architecture**: Strategic pivot from "invisible magic" to "minimal disruption"
+    - Reduced app launch delay from 2.0s to 0.5s (75% reduction in visibility time)
+    - Added window alpha transparency (10% opacity) during capture
+    - Optimized window positioning: just outside screen bounds vs far off-screen (-10000px)
+    - Maintained parallel window processing for speed
+  - **Technical Improvements**:
+    - Enhanced `moveWindowsOffScreen()` with transparency and smart positioning
+    - Added comprehensive debug logging for window detection issues
+    - Maintained accessibility permission graceful fallback
+    - Preserved capture retry logic with exponential backoff
+  - **Documentation Updates**:
+    - Added "Known Technical Limitations" section to README
+    - Clear explanation of macOS ScreenCaptureKit visibility requirement
+    - Listed current optimizations and future architectural solutions
+    - Set proper user expectations about brief window flash (~0.5s)
+  - **Version Management**: Established v0.1.05 with consistent installer versioning
+  - **Future Architecture Identified**:
+    - Short-term: Accept flash with continued optimizations
+    - Medium-term: Menu bar companion app for truly invisible capture
+    - Long-term: Private API exploration or philosophical pivot
 
 ---
 
@@ -135,22 +159,25 @@ Chrono Tracker is a lightweight, plug-and-play screenshot tracking library for m
 ## 📌 OPEN QUESTIONS
 
 - Can SwiftUI reliably enumerate top-level scenes/views for screenshot automation? *Still investigating*
-- ~~How to capture screenshots headlessly, without UI flicker or focus loss?~~ **SOLVED: ScreenCaptureKit + NSWorkspace config**
+- ~~How to capture screenshots headlessly, without UI flicker or focus loss?~~ **SOLVED: "Accept the Flash" + optimizations (v0.1.05)**
 - Any existing tools/libraries doing 80% of this (to avoid reinventing the wheel)?
 - How can we test screenshot accuracy across devices and app states?
 - ~~Would menu bar utility add too much weight? Can it be purely CLI?~~ **SOLVED: Standalone app in folder**
+- **RESOLVED**: Installer version consistency - keep `ChronoTracker-Installer.sh` filename static, version internally
 
 ## 🔧 IMPLEMENTATION DETAILS
 
 **Architecture Decisions:**
 - Post-commit hook (not pre-commit) for non-blocking operation
-- 15-second delay to let developer continue working
+- ~~15-second delay to let developer continue working~~ **Updated: 0.5s optimized capture (v0.1.05)**
 - ScreenCaptureKit for macOS 12.3+ (modern, reliable screenshots)
+- **"Accept the Flash" philosophy**: Brief window visibility required by macOS, minimized through optimizations
 - Config app lives in ChronoTracker folder (no system installation)
 - Error log with smart auto-open (respects 5-min cooldown)
 - JSON config for simplicity and Swift compatibility
 - Self-extracting installer pattern (single file, downloads from GitHub, auto-destructs)
 - Smart installation flow with git repository handling
+- **Fixed installer filename**: `ChronoTracker-Installer.sh` (no version suffixes for consistency)
 
 **Architecture Review Findings (2025-07-28):**
 - ✅ Core architecture validated as "remarkably sound" by code-architect
@@ -165,7 +192,8 @@ Chrono Tracker is a lightweight, plug-and-play screenshot tracking library for m
   - Self-extracting installer pattern
 
 **Key Learnings:**
-- "Invisible magic" philosophy validated - install once, forget it exists
+- ~~"Invisible magic" philosophy validated~~ **UPDATED**: "Accept the Flash" - macOS requires visible windows for capture
+- **CRITICAL**: ScreenCaptureKit fundamental limitation - windows must be "on-screen" to capture
 - No cloud dependencies eliminates 50% of potential issues
 - No system daemons eliminates 30% of install problems
 - No code signing requirements eliminates distribution friction
@@ -174,6 +202,10 @@ Chrono Tracker is a lightweight, plug-and-play screenshot tracking library for m
 - Git initialization handling is critical for novice developers
 - Interactive vs piped installation modes require different UX approaches
 - Screenshot backup/restore during updates prevents user data loss
+- **macOS Security Model**: Script-based approach hits fundamental constraints at OS level
+- **User Experience Trade-off**: Brief visibility (0.5s) acceptable when optimized properly
+- **Transparency + Speed**: 10% opacity + fast capture minimizes disruption effectively
+- **Architecture Evolution**: Sometimes "impossible" requirements lead to better solutions
 
 **File Structure (Current):**
 ```

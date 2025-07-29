@@ -10,10 +10,10 @@ Never lose track of your app's visual evolution again. ChronoTracker automatical
 
 ## ✨ What It Does
 
-- 📸 **Automatic Screenshots** - Captures your app's UI ~15 seconds after every git commit
+- 📸 **Automatic Screenshots** - Captures your app's UI ~0.5 seconds after every git commit
 - 🕰️ **Visual Timeline** - Creates a timestamped history of your app's evolution
 - 🔄 **Historical Import** - Scan your git history and generate screenshots retroactively
-- 🎯 **Zero Maintenance** - Install once, forget it exists
+- ⚡ **Lightning Fast** - Optimized capture with minimal disruption (brief flash)
 - 🔒 **Privacy-First** - Everything stays local, no cloud, no telemetry
 - ⚙️ **Configurable** - Control frequency, exclude windows, customize settings
 
@@ -41,9 +41,9 @@ That's it! ChronoTracker will automatically:
 ## 🎯 How It Works
 
 1. **Make a commit** to your project: `git commit -m "Add new feature"`
-2. **Wait ~15 seconds** while ChronoTracker:
-   - Builds your app invisibly
-   - Launches it headlessly (no UI flicker)
+2. **Wait ~0.5 seconds** while ChronoTracker:
+   - Builds your app quickly
+   - Launches it with minimal visibility (brief flash)
    - Captures screenshots of all windows
    - Saves them with timestamps
 3. **Check your screenshots** in the `ChronoTracker/` folder
