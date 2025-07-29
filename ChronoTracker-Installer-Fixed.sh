@@ -83,6 +83,13 @@ fi
 # Check if ChronoTracker already exists
 if [ -d "$PROJECT_ROOT/ChronoTracker" ]; then
     echo "⚠️  ChronoTracker folder already exists"
+    
+    # Check version if exists
+    if [ -f "$PROJECT_ROOT/ChronoTracker/.version" ]; then
+        INSTALLED_VERSION=$(cat "$PROJECT_ROOT/ChronoTracker/.version")
+        echo "   Current version: $INSTALLED_VERSION"
+    fi
+    
     echo ""
     echo "📸 Backing up existing screenshots..."
     

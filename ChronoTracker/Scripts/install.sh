@@ -5,24 +5,23 @@
 
 set -e
 
+# ChronoTracker version
+CHRONO_VERSION="0.1.0-alpha"
+
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$( cd "$SCRIPT_DIR/../.." && pwd )"
 CHRONO_DIR="$PROJECT_ROOT/ChronoTracker"
 
 echo "🔧 Configuring Git hooks..."
 
-# Git repository check handled by outer installer - assume it exists here
-
-# Get git directory with fallback
-GIT_DIR=$(git -C "$PROJECT_ROOT" rev-parse --git-dir 2>/dev/null || echo ".git")
-if [ ! -d "$PROJECT_ROOT/$GIT_DIR" ]; then
-    echo "⚠️  Warning: Git repository not found. Creating one..."
-    git -C "$PROJECT_ROOT" init
-    git -C "$PROJECT_ROOT" add .
-    git -C "$PROJECT_ROOT" commit -m "Initial commit - ChronoTracker installation" || true
-    GIT_DIR=".git"
+# Verify git repository exists (outer installer should have ensured this)
+if ! git -C "$PROJECT_ROOT" rev-parse --git-dir >/dev/null 2>&1; then
+    echo "❌ Git repository not found. This should have been handled by the installer."
+    exit 1
 fi
 
+# Get git directory
+GIT_DIR=$(git -C "$PROJECT_ROOT" rev-parse --git-dir)
 HOOKS_DIR="$PROJECT_ROOT/$GIT_DIR/hooks"
 
 # Create hooks directory if it doesn't exist
@@ -276,5 +275,8 @@ rm -rf "$BUILD_DIR"
 EOF
 
 chmod +x "$CHRONO_DIR/Scripts/capture.sh"
+
+# Write version file
+echo "$CHRONO_VERSION" > "$CHRONO_DIR/.version"
 
 # Success message moved to outer installer
