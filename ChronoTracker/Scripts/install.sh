@@ -9,7 +9,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$( cd "$SCRIPT_DIR/../.." && pwd )"
 CHRONO_DIR="$PROJECT_ROOT/ChronoTracker"
 
-echo "🚀 Installing ChronoTracker..."
+echo "🔧 Configuring Git hooks..."
 
 # Git repository check handled by outer installer - assume it exists here
 
@@ -277,18 +277,4 @@ EOF
 
 chmod +x "$CHRONO_DIR/Scripts/capture.sh"
 
-echo "✅ ChronoTracker installed successfully!"
-echo ""
-echo "🔐 IMPORTANT: Screen Recording Permission Required"
-echo ""
-echo "When you make your first commit, macOS will ask for permission:"
-echo "  \"Terminal would like to record this computer's screen\""
-echo ""
-echo "Click 'Open System Preferences' and enable Screen Recording for your terminal."
-echo "This is required to capture app screenshots."
-echo ""
-echo "📸 Screenshots will be captured ~15 seconds after each commit"
-echo "📁 Check the ChronoTracker folder for your UI history"
-echo ""
-echo "🎯 Quick test: Make a commit and wait ~15 seconds!"
-echo "   git add . && git commit -m \"Test ChronoTracker\""
+# Success message moved to outer installer

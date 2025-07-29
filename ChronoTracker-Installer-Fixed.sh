@@ -131,51 +131,48 @@ cp -r "$TEMP_DIR/chrono-tracker/ChronoTracker" "$PROJECT_ROOT/"
 chmod +x "$PROJECT_ROOT/ChronoTracker/Scripts"/*.sh
 chmod +x "$PROJECT_ROOT/ChronoTracker/Scripts"/*.swift
 
-echo "🔧 Setting up Git hooks..."
+echo "🚀 Installing ChronoTracker..."
 
-# Run the install script
-if "$PROJECT_ROOT/ChronoTracker/Scripts/install.sh"; then
-    echo ""
+# Run the install script (it will output "Configuring Git hooks...")
+if "$PROJECT_ROOT/ChronoTracker/Scripts/install.sh" > /dev/null 2>&1; then
+    echo "✅ Core files installed"
     
     # Restore backed up screenshots if they exist
     if [ -n "$BACKUP_DIR" ] && [ -d "$BACKUP_DIR" ]; then
-        echo "📸 Restoring your screenshots..."
-        
         if ls "$BACKUP_DIR"/*.png > /dev/null 2>&1; then
             cp "$BACKUP_DIR"/*.png "$PROJECT_ROOT/ChronoTracker/" 2>/dev/null || true
             RESTORED_COUNT=$(ls "$BACKUP_DIR"/*.png 2>/dev/null | wc -l)
-            echo "  ✅ Restored $RESTORED_COUNT screenshots"
+            echo "📸 Screenshots restored ($RESTORED_COUNT files)"
         fi
         
         if [ -f "$BACKUP_DIR/config.json" ]; then
             cp "$BACKUP_DIR/config.json" "$PROJECT_ROOT/ChronoTracker/" 2>/dev/null || true
-            echo "  ✅ Restored config.json"
         fi
         
         # Clean up backup directory
         rm -rf "$BACKUP_DIR"
-        echo "🧹 Cleaned up temporary backup"
-        echo ""
     fi
     
+    echo "🔧 Git hooks configured"
+    echo ""
     echo "✅ ChronoTracker installed successfully!"
     echo ""
-    echo "📖 What's next:"
-    echo "   • Screenshots will be captured ~15 seconds after each commit"
-    echo "   • Check ChronoTracker/ folder for your UI history"
-    echo "   • Build config app: cd ChronoTracker/Config && ./build.sh"
-    echo "   • Import history: ./ChronoTracker/Scripts/historical-import.sh"
+    echo "🔐 IMPORTANT: Screen Recording Permission Required"
+    echo "   When you make your first commit, macOS will prompt for permission."
+    echo "   Click 'Allow' to enable screenshot capture."
     echo ""
-    echo "📚 Documentation: $PROJECT_ROOT/ChronoTracker/README.md"
+    echo "📖 Next steps:"
+    echo "   • Make a test commit: git add . && git commit -m \"Test\""
+    echo "   • Screenshots appear in ChronoTracker/ after ~15 seconds"
+    echo "   • Config: cd ChronoTracker/Config && ./build.sh"
+    echo "   • Import history: ./ChronoTracker/Scripts/historical-import.sh"
 else
     echo "❌ Installation failed. Check the error messages above."
     exit 1
 fi
 
-echo "🧹 Cleaning up installer..."
+echo ""
+echo "✨ Installation complete. Happy coding!"
 
 # Self-destruct: remove the installer
-rm -f "$INSTALLER_PATH"
-
-echo "✨ Installation complete. Installer removed."
-echo "   Happy coding! Your UI evolution is now being tracked."
+rm -f "$INSTALLER_PATH" 2>/dev/null
