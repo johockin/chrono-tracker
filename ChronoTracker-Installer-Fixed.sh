@@ -12,7 +12,7 @@ REPO_URL="https://github.com/johockin/chrono-tracker.git"
 TEMP_DIR="/tmp/chrono-tracker-install-$$"
 
 echo "🚀 ChronoTracker Self-Extracting Installer"
-echo "   Version: 0.1.03"
+echo "   Version: 0.1.04"
 echo "   Installing to: $PROJECT_ROOT"
 echo ""
 
@@ -190,7 +190,7 @@ if "$PROJECT_ROOT/ChronoTracker/Scripts/install.sh" > /dev/null 2>&1; then
     
     echo "🔧 Git hooks configured"
     echo ""
-    echo "✅ ChronoTracker 0.1.03 installed successfully!"
+    echo "✅ ChronoTracker 0.1.04 installed successfully!"
     echo ""
     echo "🔐 IMPORTANT: Screen Recording Permission Required"
     echo "   When you make your first commit, macOS will prompt for permission."

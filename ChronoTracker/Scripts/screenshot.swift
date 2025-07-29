@@ -72,7 +72,6 @@ class ScreenshotCapture {
         config.activates = false
         config.hides = false  // CHANGED: Make visible for ScreenCaptureKit
         config.addsToRecentItems = false
-        config.activationPolicy = .accessory  // Minimize Dock presence
         
         do {
             let app = try await NSWorkspace.shared.openApplication(at: appURL, configuration: config)
@@ -124,7 +123,7 @@ class ScreenshotCapture {
         
         // Get all windows for the app
         let runningApp = NSWorkspace.shared.runningApplications.first { $0.processIdentifier == pid }
-        guard let app = runningApp else { 
+        guard runningApp != nil else { 
             print("DEBUG: Could not find running app for PID \(pid)")
             return 
         }
