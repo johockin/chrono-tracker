@@ -1,11 +1,20 @@
 #!/usr/bin/swift
 
 // ChronoTracker Screenshot Capture
-// Launches app headlessly and captures all windows
+// Launches app with managed brief visibility and captures all windows
+//
+// SOLUTION: The app is launched visible (hides=false) but immediately moved off-screen
+// using the Accessibility API to minimize user disruption while ensuring ScreenCaptureKit
+// can capture the windows (which requires onScreen=true).
+//
+// REQUIREMENTS:
+// - macOS 12.3+ for ScreenCaptureKit
+// - Accessibility permissions for optimal window positioning (graceful fallback without)
 
 import Foundation
 import AppKit
 import ScreenCaptureKit
+import ApplicationServices
 
 @available(macOS 12.3, *)
 class ScreenshotCapture {
@@ -57,18 +66,22 @@ class ScreenshotCapture {
     }
     
     func capture() async {
-        // Launch the app
+        // Launch the app with managed brief visibility
         let appURL = URL(fileURLWithPath: appPath)
         let config = NSWorkspace.OpenConfiguration()
         config.activates = false
-        config.hides = true
+        config.hides = false  // CHANGED: Make visible for ScreenCaptureKit
         config.addsToRecentItems = false
+        config.activationPolicy = .accessory  // Minimize Dock presence
         
         do {
             let app = try await NSWorkspace.shared.openApplication(at: appURL, configuration: config)
             
             // Give app time to fully launch and render
-            try await Task.sleep(nanoseconds: 3_000_000_000) // 3 seconds
+            try await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds - reduced for faster capture
+            
+            // Move windows off-screen to minimize disruption
+            await moveWindowsOffScreen(for: app.processIdentifier)
             
             // Get all windows for this app
             let windows = await getWindows(for: app.processIdentifier)
@@ -84,15 +97,58 @@ class ScreenshotCapture {
             dateFormatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
             let timestamp = dateFormatter.string(from: Date())
             
-            for (index, window) in windows.enumerated() {
-                await captureWindowWithRetry(window, timestamp: timestamp, index: index)
+            // Fast capture all windows to minimize visibility time
+            await withTaskGroup(of: Void.self) { group in
+                for (index, window) in windows.enumerated() {
+                    group.addTask {
+                        await self.captureWindowWithRetry(window, timestamp: timestamp, index: index)
+                    }
+                }
             }
             
-            // Terminate the app
+            // Immediately terminate the app after capture
             app.terminate()
             
         } catch {
             logError("Failed to launch app: \(error)")
+        }
+    }
+    
+    // Move windows off-screen to minimize user disruption
+    func moveWindowsOffScreen(for pid: pid_t) async {
+        // Check if we have accessibility permissions
+        guard AXIsProcessTrusted() else {
+            print("DEBUG: No accessibility permissions - windows will be briefly visible")
+            return
+        }
+        
+        // Get all windows for the app
+        let runningApp = NSWorkspace.shared.runningApplications.first { $0.processIdentifier == pid }
+        guard let app = runningApp else { 
+            print("DEBUG: Could not find running app for PID \(pid)")
+            return 
+        }
+        
+        // Try to move windows using Accessibility API
+        let appElement = AXUIElementCreateApplication(pid)
+        var windowList: CFTypeRef?
+        
+        let result = AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &windowList)
+        if result == .success, let windows = windowList as? [AXUIElement] {
+            print("DEBUG: Moving \(windows.count) windows off-screen")
+            for (index, window) in windows.enumerated() {
+                // Move window far off-screen (but still technically visible for ScreenCaptureKit)
+                var offScreenPosition = CGPoint(x: -10000, y: -10000)
+                
+                if let positionValue = AXValueCreate(.cgPoint, &offScreenPosition) {
+                    let setResult = AXUIElementSetAttributeValue(window, kAXPositionAttribute as CFString, positionValue)
+                    if setResult != .success {
+                        print("DEBUG: Failed to move window \(index): \(setResult.rawValue)")
+                    }
+                }
+            }
+        } else {
+            print("DEBUG: Failed to get window list: \(result.rawValue)")
         }
     }
     
@@ -110,7 +166,7 @@ class ScreenshotCapture {
             }
             
             let filteredWindows = allAppWindows.filter { window in
-                window.isOnScreen &&
+                // Remove isOnScreen requirement since we're making windows visible
                 window.frame.width > 50 && window.frame.height > 50 &&  // Less restrictive size
                 isAppWindow(window)  // Smart filtering
             }
