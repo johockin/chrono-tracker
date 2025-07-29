@@ -6,7 +6,7 @@
 set -e
 
 # ChronoTracker version
-CHRONO_VERSION="0.1.01"
+CHRONO_VERSION="0.1.02"
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$( cd "$SCRIPT_DIR/../.." && pwd )"
@@ -147,10 +147,7 @@ check_permission() {
     return 0
 }
 
-# Give the developer a moment to continue working
-sleep 15
-
-# Quick permission check
+# Quick permission check (no delay - capture should be instant)
 if ! check_permission; then
     log_error "Screen recording permission may be required. Enable in System Preferences > Security & Privacy > Privacy > Screen Recording"
 fi
@@ -267,8 +264,29 @@ if [ -z "$APP_PATH" ]; then
     exit 1
 fi
 
-# Launch app and capture screenshots
-"$CHRONO_DIR/Scripts/screenshot.swift" "$APP_PATH"
+# Launch app and capture screenshots with retry logic
+MAX_RETRIES=2
+RETRY_COUNT=0
+
+while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+    if "$CHRONO_DIR/Scripts/screenshot.swift" "$APP_PATH"; then
+        # Success - exit retry loop
+        break
+    else
+        RETRY_COUNT=$((RETRY_COUNT + 1))
+        if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+            log_error "Screenshot capture failed (attempt $RETRY_COUNT/$MAX_RETRIES). This may be due to missing screen recording permission."
+            log_error "Grant permission in System Preferences > Security & Privacy > Privacy > Screen Recording, then retrying..."
+            sleep 2  # Brief delay before retry
+        else
+            log_error "Screenshot capture failed after $MAX_RETRIES attempts."
+            log_error "NEXT STEPS:"
+            log_error "1. Grant screen recording permission in System Preferences"
+            log_error "2. Run manually: $CHRONO_DIR/Scripts/screenshot.swift \"$APP_PATH\""
+            log_error "3. Or make another commit to trigger automatic retry"
+        fi
+    fi
+done
 
 # Clean up build artifacts
 rm -rf "$BUILD_DIR"

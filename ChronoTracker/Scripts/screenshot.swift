@@ -100,12 +100,23 @@ class ScreenshotCapture {
     func getWindows(for pid: pid_t) async -> [SCWindow] {
         do {
             let content = try await SCShareableContent.current
-            return content.windows.filter { window in
-                window.owningApplication?.processID == pid && 
+            let allAppWindows = content.windows.filter { window in
+                window.owningApplication?.processID == pid
+            }
+            
+            print("DEBUG: Found \(allAppWindows.count) total windows for PID \(pid)")
+            for (i, window) in allAppWindows.enumerated() {
+                print("  Window \(i): '\(window.title ?? "no title")' size=\(Int(window.frame.width))x\(Int(window.frame.height)) onScreen=\(window.isOnScreen)")
+            }
+            
+            let filteredWindows = allAppWindows.filter { window in
                 window.isOnScreen &&
-                window.frame.width > 100 && window.frame.height > 100 &&  // Skip tiny windows
+                window.frame.width > 50 && window.frame.height > 50 &&  // Less restrictive size
                 isAppWindow(window)  // Smart filtering
             }
+            
+            print("DEBUG: After filtering: \(filteredWindows.count) windows")
+            return filteredWindows
         } catch {
             logError("Failed to get windows: \(error)")
             return []
@@ -114,10 +125,8 @@ class ScreenshotCapture {
     
     // Smart window filtering to exclude system/debug windows
     func isAppWindow(_ window: SCWindow) -> Bool {
-        guard let title = window.title, !title.isEmpty else { 
-            // Skip windows without titles (usually system windows)
-            return false 
-        }
+        // Accept windows without titles for now (some valid app windows don't have titles)
+        let title = window.title ?? ""
         
         // Skip Xcode debugger, system dialogs, and development tools
         let systemPrefixes = [
