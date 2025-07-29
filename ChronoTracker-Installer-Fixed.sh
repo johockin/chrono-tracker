@@ -15,6 +15,33 @@ echo "🚀 ChronoTracker Self-Extracting Installer"
 echo "   Installing to: $PROJECT_ROOT"
 echo ""
 
+# Check Xcode configuration first
+echo "🔧 Checking Xcode configuration..."
+
+current_xcode=$(xcode-select -p 2>/dev/null || echo "not-found")
+if [[ "$current_xcode" == *"CommandLineTools"* ]] && [ -d "/Applications/Xcode.app" ]; then
+    echo "⚠️  Switching from Command Line Tools to full Xcode..."
+    echo "   (You may be prompted for your password)"
+    if sudo xcode-select -s /Applications/Xcode.app/Contents/Developer; then
+        echo "✅ Xcode configured successfully"
+    else
+        echo "❌ Failed to configure Xcode. Please run:"
+        echo "   sudo xcode-select -s /Applications/Xcode.app/Contents/Developer"
+        exit 1
+    fi
+elif [ ! -d "/Applications/Xcode.app" ]; then
+    echo "❌ ChronoTracker requires full Xcode installation"
+    echo "   Please install Xcode from the App Store and run installer again"
+    echo ""
+    echo "   Note: Command Line Tools alone are not sufficient."
+    echo "   ChronoTracker needs Xcode to build and capture your app."
+    exit 1
+else
+    echo "✅ Xcode properly configured"
+fi
+
+echo ""
+
 # Check if we're in a git repository FIRST (before any folder operations)
 if ! git -C "$PROJECT_ROOT" rev-parse --git-dir > /dev/null 2>&1; then
     echo "❌ ChronoTracker requires a Git repository to work"

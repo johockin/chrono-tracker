@@ -68,6 +68,7 @@ Chrono Tracker is a lightweight, plug-and-play screenshot tracking library for m
     - Handles both git and non-git project directories
     - Comprehensive README with pre-alpha warnings
     - Fixed path handling for directories with spaces
+    - Added Xcode configuration check (prevents Command Line Tools issues)
 
 ---
 
