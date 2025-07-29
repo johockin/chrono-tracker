@@ -6,7 +6,7 @@
 set -e
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-PROJECT_ROOT="$( cd "$SCRIPT_DIR/../../.." && pwd )"
+PROJECT_ROOT="$( cd "$SCRIPT_DIR/../.." && pwd )"
 CHRONO_DIR="$PROJECT_ROOT/ChronoTracker"
 
 echo "🚀 Installing ChronoTracker..."
@@ -167,9 +167,9 @@ fi
 
 # Use workspace if available, otherwise project
 if [ -n "$WORKSPACE" ]; then
-    BUILD_TARGET="-workspace $WORKSPACE"
+    BUILD_TARGET="-workspace \"$WORKSPACE\""
 else
-    BUILD_TARGET="-project $PROJECT"
+    BUILD_TARGET="-project \"$PROJECT\""
 fi
 
 # Get build info using JSON for robust parsing
@@ -208,7 +208,7 @@ if [ -z "$SCHEME" ]; then
     log_error "Could not determine Xcode scheme using JSON parsing"
     
     # Fallback to legacy parsing
-    SCHEME=$(xcodebuild -list $BUILD_TARGET 2>/dev/null | awk '/Schemes:/{getline; print $1}')
+    SCHEME=$(eval "xcodebuild -list $BUILD_TARGET" 2>/dev/null | awk '/Schemes:/{getline; print $1}')
     
     if [ -z "$SCHEME" ]; then
         log_error "Could not determine Xcode scheme (fallback also failed)"
@@ -218,7 +218,7 @@ fi
 
 # Try to build the app
 BUILD_DIR="$CHRONO_DIR/.build"
-xcodebuild $BUILD_TARGET -scheme "$SCHEME" -configuration Debug -derivedDataPath "$BUILD_DIR" build > /dev/null 2>&1
+eval "xcodebuild $BUILD_TARGET -scheme \"$SCHEME\" -configuration Debug -derivedDataPath \"$BUILD_DIR\" build" > /dev/null 2>&1
 
 APP_PATH=""
 
